@@ -17,6 +17,7 @@ torch = "^2.6.0"
 matplotlib = "^3.10.0"
 numpy = "^2.2.3"
 gpytorch = "^1.14"
+tqdm = "^4.67.1"
 
 
 [build-system]
