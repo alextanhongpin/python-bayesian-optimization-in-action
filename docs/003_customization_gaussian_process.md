@@ -62,7 +62,7 @@ visualize_gp_belief(model, likelihood)
 
 
     
-![png](03_customizatin_gaussian_process_files/03_customizatin_gaussian_process_5_0.png)
+![png](003_customization_gaussian_process_files/003_customization_gaussian_process_5_0.png)
     
 
 
@@ -131,7 +131,7 @@ plt.show()
 
 
     
-![png](03_customizatin_gaussian_process_files/03_customizatin_gaussian_process_7_0.png)
+![png](003_customization_gaussian_process_files/003_customization_gaussian_process_7_0.png)
     
 
 
@@ -194,7 +194,7 @@ ax[1].set_ylabel("constant");
 
 
     
-![png](03_customizatin_gaussian_process_files/03_customizatin_gaussian_process_9_0.png)
+![png](003_customization_gaussian_process_files/003_customization_gaussian_process_9_0.png)
     
 
 
@@ -205,7 +205,7 @@ visualize_gp_belief(model, likelihood)
 
 
     
-![png](03_customizatin_gaussian_process_files/03_customizatin_gaussian_process_10_0.png)
+![png](003_customization_gaussian_process_files/003_customization_gaussian_process_10_0.png)
     
 
 
@@ -296,7 +296,7 @@ plt.tight_layout();
 
 
     
-![png](03_customizatin_gaussian_process_files/03_customizatin_gaussian_process_15_0.png)
+![png](003_customization_gaussian_process_files/003_customization_gaussian_process_15_0.png)
     
 
 
@@ -307,6 +307,6 @@ visualize_gp_belief(model, likelihood)
 
 
     
-![png](03_customizatin_gaussian_process_files/03_customizatin_gaussian_process_16_0.png)
+![png](003_customization_gaussian_process_files/003_customization_gaussian_process_16_0.png)
     
 
