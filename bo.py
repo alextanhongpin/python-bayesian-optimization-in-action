@@ -1,9 +1,12 @@
+from tqdm.notebook import tqdm
+import botorch
+import gpytorch
 import matplotlib.pyplot as plt
 import torch
 
 # Customize plot.
 plt.style.use("fivethirtyeight")
-plt.rc("figure", figsize=(16, 8))
+plt.rc("figure", figsize=(12, 6))
 
 
 def forrester_1d(x):
@@ -19,13 +22,19 @@ def ackley(x):
     ) - torch.exp(torch.cos(2 * pi * x[:, 0] / 3) + torch.cos(2 * pi * x[:, 1]))
 
 
-def visualize_gp_belief(model, likelihood, num_samples=5):
+def visualize_gp_belief(
+    model,
+    likelihood,
+    num_samples=5,
+    xs=None,
+    ys=None,
+    train_x=None,
+    train_y=None,
+):
     with torch.no_grad():
         predictive_distribution = likelihood(model(xs))
         predictive_mean = predictive_distribution.mean
         predictive_upper, predictive_lower = predictive_distribution.confidence_region()
-
-    plt.figure(figsize=(8, 6))
 
     plt.plot(xs, ys, label="objective", c="r")
     plt.scatter(train_x, train_y, marker="x", c="k", label="observation")
@@ -40,7 +49,6 @@ def visualize_gp_belief(model, likelihood, num_samples=5):
         plt.plot(xs, predictive_distribution.sample(), alpha=0.5, linewidth=2)
 
     plt.legend(fontsize=15)
-    plt.show()
 
 
 def visualize_gp_belief_and_policy(
@@ -62,7 +70,7 @@ def visualize_gp_belief_and_policy(
             acquisition_score = policy(xs.unsqueeze(1))
 
     if policy is None:
-        plt.figure(figsize=(16, 6))
+        fig = plt.figure(figsize=(12, 6))
         plt.plot(xs, ys, label="objective", c="r")
         plt.scatter(train_x, train_y, marker="x", c="k", label="observations")
         plt.plot(xs, predictive_mean, label="mean")
@@ -70,10 +78,11 @@ def visualize_gp_belief_and_policy(
             xs.flatten(), predictive_upper, predictive_lower, alpha=0.3, label="95% CI"
         )
         plt.legend()
-        plt.show()
+
+        return fig
     else:
         fig, ax = plt.subplots(
-            2, 1, figsize=(16, 12), sharex=True, gridspec_kw={"height_ratios": [2, 1]}
+            2, 1, figsize=(12, 6), sharex=True, gridspec_kw={"height_ratios": [2, 1]}
         )
 
         # GP belief
@@ -98,9 +107,8 @@ def visualize_gp_belief_and_policy(
             ax[1].axvline(next_x.item(), linestyle="dotted", c="k")
 
         ax[1].set_ylabel("acquisition core")
-        plt.show()
 
-        pass
+        return fig
 
 
 def visualize_improvement(acquisition_fn, **kwargs):
@@ -114,12 +122,12 @@ def visualize_improvement(acquisition_fn, **kwargs):
     train_y = forrester_1d(train_x)
 
     for i in range(num_queries):
-        print("iteration", i)
-        print("incumbent", train_x[train_y.argmax()], train_y.max())
+        # print("iteration", i)
+        # print("incumbent", train_x[train_y.argmax()], train_y.max())
 
         model, likelihood = fit_gp_model(train_x, train_y)
 
-        if acquisition_fn == "pi":
+        if acquisition_fn == "poi":
             policy = botorch.acquisition.analytic.ProbabilityOfImprovement(
                 model, best_f=train_y.max()
             )
@@ -132,7 +140,7 @@ def visualize_improvement(acquisition_fn, **kwargs):
                 model, **kwargs
             )  # beta=1
         else:
-            raise NotImplementedError
+            raise NotImplementedError(acquisition_fn)
 
         next_x, acq_val = botorch.optim.optimize_acqf(
             policy,
@@ -142,7 +150,7 @@ def visualize_improvement(acquisition_fn, **kwargs):
             raw_samples=50,
         )
 
-        visualize_gp_belief_and_policy(
+        fig = visualize_gp_belief_and_policy(
             model,
             likelihood,
             policy,
@@ -152,11 +160,21 @@ def visualize_improvement(acquisition_fn, **kwargs):
             train_x=train_x,
             train_y=train_y,
         )
+        fig.suptitle(
+            f"{acquisition_fn} acquisition function (step={i+1}, x={train_x[train_y.argmax()].item():.2f}, y={train_y.max():.2f})",
+            fontsize=20,
+        )
+
+        image_path = f"tmp/{acquisition_fn}_{i}.png"
+        plt.savefig(image_path, bbox_inches="tight")
+        plt.close(fig)
 
         next_y = forrester_1d(next_x)
 
         train_x = torch.cat([train_x, next_x])
         train_y = torch.cat([train_y, next_y])
+
+    return train_x, train_y
 
 
 def fit_gp_model(train_x, train_y, num_train_iters=500):
@@ -197,4 +215,5 @@ class GPModel(gpytorch.models.ExactGP, botorch.models.gpytorch.GPyTorchModel):
     def forward(self, x):
         mean_x = self.mean_module(x)
         covar_x = self.covar_module(x)
+
         return gpytorch.distributions.MultivariateNormal(mean_x, covar_x)
