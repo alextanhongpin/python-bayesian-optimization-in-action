@@ -112,8 +112,8 @@ def visualize_gp_belief_and_policy(
 
 
 def visualize_improvement(acquisition_fn, **kwargs):
-    num_queries = 10
     bound = 5
+    num_queries = 10
 
     xs = torch.linspace(-bound, bound, bound * 100 + 1).unsqueeze(1)
     ys = forrester_1d(xs)
@@ -160,14 +160,16 @@ def visualize_improvement(acquisition_fn, **kwargs):
             train_x=train_x,
             train_y=train_y,
         )
+
+        max_x = train_x[train_y.argmax()].item()
+        max_y = train_y.max()
+
         fig.suptitle(
-            f"{acquisition_fn} acquisition function (step={i+1}, x={train_x[train_y.argmax()].item():.2f}, y={train_y.max():.2f})",
-            fontsize=20,
+            f"{acquisition_fn} acquisition function (step={i+1}, x={max_x:.2f}, y={max_y:.2f})",
         )
 
-        image_path = f"tmp/{acquisition_fn}_{i}.png"
-        plt.savefig(image_path, bbox_inches="tight")
-        plt.close(fig)
+        plt.savefig(f"tmp/{acquisition_fn}_{i}.png")
+        plt.close(fig)  # Don't display the plot.
 
         next_y = forrester_1d(next_x)
 
