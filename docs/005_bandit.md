@@ -8,12 +8,6 @@ from bo import visualize_improvement
 
 ```python
 visualize_improvement("ucb", beta=1)
-
-
-@interact(slides=widgets.IntSlider(min=0, max=9))
-def f(slides):
-    clear_output(wait=True)
-    display(Image(f"tmp/ucb_{slides}.png"))
 ```
 
 
@@ -24,6 +18,22 @@ def f(slides):
       0%|          | 0/500 [00:00<?, ?it/s]
 
 
+
+      0%|          | 0/500 [00:00<?, ?it/s]
+
+
+
+      0%|          | 0/500 [00:00<?, ?it/s]
+
+
+
+      0%|          | 0/500 [00:00<?, ?it/s]
+
+
+
+      0%|          | 0/500 [00:00<?, ?it/s]
+
+
     /Users/alextanhongpin/Library/Caches/pypoetry/virtualenvs/python-bayesian-optimization-in-action-aU6qUxK9-py3.12/lib/python3.12/site-packages/botorch/optim/optimize.py:652: RuntimeWarning: Optimization failed in `gen_candidates_scipy` with the following warning(s):
     [OptimizationWarning('Optimization failed within `scipy.optimize.minimize` with status 2 and message ABNORMAL: .')]
     Trying again with a new set of initial conditions.
@@ -47,40 +57,54 @@ def f(slides):
 
 
 
-      0%|          | 0/500 [00:00<?, ?it/s]
+
+
+    (tensor([[ 1.0000],
+             [ 2.0000],
+             [-1.0771],
+             [ 1.3371],
+             [ 1.4680],
+             [ 1.5210],
+             [ 1.5248],
+             [ 1.5249],
+             [ 1.5243],
+             [ 1.5238],
+             [ 1.5237],
+             [ 1.5225]]),
+     tensor([1.6054, 1.5029, 1.0002, 2.0917, 2.1879, 2.2027, 2.2031, 2.2031, 2.2031,
+             2.2030, 2.2030, 2.2029]))
 
 
 
-      0%|          | 0/500 [00:00<?, ?it/s]
+
+```python
+play = widgets.Play(
+    value=0,
+    min=0,
+    max=9,
+    step=1,
+    interval=500,
+    description="Press play",
+    disabled=False,
+)
+slider = widgets.IntSlider(min=0, max=9)
+widgets.jslink((play, "value"), (slider, "value"))
+widgets.HBox([play, slider])
 
 
-    /Users/alextanhongpin/Library/Caches/pypoetry/virtualenvs/python-bayesian-optimization-in-action-aU6qUxK9-py3.12/lib/python3.12/site-packages/botorch/optim/optimize.py:652: RuntimeWarning: Optimization failed in `gen_candidates_scipy` with the following warning(s):
-    [OptimizationWarning('Optimization failed within `scipy.optimize.minimize` with status 2 and message ABNORMAL: .')]
-    Trying again with a new set of initial conditions.
-      return _optimize_acqf_batch(opt_inputs=opt_inputs)
+@interact(play=play, slider=slider)
+def f(play, slider):
+    clear_output(wait=True)
+    display(Image(f"tmp/ucb_{play}.png"))
+```
 
 
-
-      0%|          | 0/500 [00:00<?, ?it/s]
-
-
-
-      0%|          | 0/500 [00:00<?, ?it/s]
-
-
-
-    interactive(children=(IntSlider(value=0, description='slides', max=9), Output()), _dom_classes=('widget-intera…
+    interactive(children=(Play(value=0, description='Press play', interval=500, max=9), IntSlider(value=0, descrip…
 
 
 
 ```python
 visualize_improvement("ucb", beta=2)
-
-
-@interact(slides=widgets.IntSlider(min=0, max=9))
-def f(slides):
-    clear_output(wait=True)
-    display(Image(f"tmp/ucb_{slides}.png"))
 ```
 
 
@@ -124,7 +148,49 @@ def f(slides):
 
 
 
-    interactive(children=(IntSlider(value=0, description='slides', max=9), Output()), _dom_classes=('widget-intera…
+
+
+    (tensor([[ 1.0000],
+             [ 2.0000],
+             [-1.3380],
+             [ 5.0000],
+             [ 4.4613],
+             [ 4.2093],
+             [ 4.6015],
+             [ 4.5784],
+             [ 4.5788],
+             [ 4.5780],
+             [ 4.5781],
+             [ 4.5783]]),
+     tensor([1.6054, 1.5029, 1.0143, 4.8633, 6.9494, 5.5486, 7.1408, 7.1430, 7.1431,
+             7.1429, 7.1429, 7.1430]))
+
+
+
+
+```python
+play = widgets.Play(
+    value=0,
+    min=0,
+    max=9,
+    step=1,
+    interval=500,
+    description="Press play",
+    disabled=False,
+)
+slider = widgets.IntSlider(min=0, max=9)
+widgets.jslink((play, "value"), (slider, "value"))
+widgets.HBox([play, slider])
+
+
+@interact(play=play, slider=slider)
+def f(play, slider):
+    clear_output(wait=True)
+    display(Image(f"tmp/ucb_{play}.png"))
+```
+
+
+    interactive(children=(Play(value=0, description='Press play', interval=500, max=9), IntSlider(value=0, descrip…
 
 
 ## Smart Sampling with Thompson policy sampling
@@ -240,12 +306,26 @@ for i in range(num_queries):
 
 
 ```python
-@interact(slides=widgets.IntSlider(min=0, max=9))
-def f(slides):
+play = widgets.Play(
+    value=0,
+    min=0,
+    max=9,
+    step=1,
+    interval=500,
+    description="Press play",
+    disabled=False,
+)
+slider = widgets.IntSlider(min=0, max=9)
+widgets.jslink((play, "value"), (slider, "value"))
+widgets.HBox([play, slider])
+
+
+@interact(play=play, slider=slider)
+def f(play, slider):
     clear_output(wait=True)
-    display(Image(f"tmp/ts_{slides}.png"))
+    display(Image(f"tmp/ts_{play}.png"))
 ```
 
 
-    interactive(children=(IntSlider(value=0, description='slides', max=9), Output()), _dom_classes=('widget-intera…
+    interactive(children=(Play(value=0, description='Press play', interval=500, max=9), IntSlider(value=0, descrip…
 
