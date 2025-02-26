@@ -179,7 +179,22 @@ def visualize_improvement(acquisition_fn, **kwargs):
     return train_x, train_y
 
 
-def fit_gp_model(train_x, train_y, num_train_iters=500):
+class GPModel(gpytorch.models.ExactGP, botorch.models.gpytorch.GPyTorchModel):
+    num_outputs = 1
+
+    def __init__(self, train_x, train_y, likelihood):
+        super().__init__(train_x, train_y, likelihood)
+        self.mean_module = gpytorch.means.ConstantMean()
+        self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernel())
+
+    def forward(self, x):
+        mean_x = self.mean_module(x)
+        covar_x = self.covar_module(x)
+
+        return gpytorch.distributions.MultivariateNormal(mean_x, covar_x)
+
+
+def fit_gp_model(train_x, train_y, num_train_iters=500, GPModel=GPModel):
     noise = 1e-4
 
     likelihood = gpytorch.likelihoods.GaussianLikelihood()
@@ -204,18 +219,3 @@ def fit_gp_model(train_x, train_y, num_train_iters=500):
     likelihood.eval()
 
     return model, likelihood
-
-
-class GPModel(gpytorch.models.ExactGP, botorch.models.gpytorch.GPyTorchModel):
-    num_outputs = 1
-
-    def __init__(self, train_x, train_y, likelihood):
-        super().__init__(train_x, train_y, likelihood)
-        self.mean_module = gpytorch.means.ConstantMean()
-        self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernel())
-
-    def forward(self, x):
-        mean_x = self.mean_module(x)
-        covar_x = self.covar_module(x)
-
-        return gpytorch.distributions.MultivariateNormal(mean_x, covar_x)
