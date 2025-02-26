@@ -29,6 +29,6 @@ convert:
 	poetry run jupyter nbconvert --to markdown --output-dir=docs $(shell git diff HEAD --name-only | grep .ipynb)
 
 
-format:
+lint:
 	@poetry run black *.py
 

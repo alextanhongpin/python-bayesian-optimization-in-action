@@ -19,6 +19,19 @@ plt.style.use("fivethirtyeight")
 plt.rc("figure", figsize=(16, 8))
 
 
+def forrester_1d(x):
+    # a modification of https://www.sfu.ca/~ssurjano/forretal08.html
+    y = -((x + 1) ** 2) * torch.sin(2 * x + 2) / 5 + 1
+    return y.squeeze(-1)
+
+
+def ackley(x):
+    # a modification of https://www.sfu.ca/~ssurjano/ackley.html
+    return -20 * torch.exp(
+        -0.2 * torch.sqrt((x[:, 0] ** 2 + x[:, 1] ** 2) / 2)
+    ) - torch.exp(torch.cos(2 * pi * x[:, 0] / 3) + torch.cos(2 * pi * x[:, 1]))
+
+
 def visualize_gp_belief(model, likelihood, num_samples=5):
     with torch.no_grad():
         predictive_distribution = likelihood(model(xs))
@@ -94,37 +107,48 @@ def visualize_gp_belief_and_policy(model, likelihood, policy=None, next_x=None):
         pass
 
 
-def forrester_1d(x):
-    # a modification of https://www.sfu.ca/~ssurjano/forretal08.html
-    y = -((x + 1) ** 2) * torch.sin(2 * x + 2) / 5 + 1
-    return y.squeeze(-1)
+def visualize_improvement(acquisition_fn):
+    num_queries = 10
+    bound = 5
+
+    xs = torch.linspace(-bound, bound, bound * 100 + 1).unsqueeze(1)
+    ys = forrester_1d(xs)
+
+    train_x = torch.tensor([[1.0], [2.0]])
+    train_y = forrester_1d(train_x)
+
+    for i in range(num_queries):
+        print("iteration", i)
+        print("incumbent", train_x[train_y.argmax()], train_y.max())
+
+        model, likelihood = fit_gp_model(train_x, train_y)
 
 
-def ackley(x):
-    # a modification of https://www.sfu.ca/~ssurjano/ackley.html
-    return -20 * torch.exp(
-        -0.2 * torch.sqrt((x[:, 0] ** 2 + x[:, 1] ** 2) / 2)
-    ) - torch.exp(torch.cos(2 * pi * x[:, 0] / 3) + torch.cos(2 * pi * x[:, 1]))
-```
+        if acquisition_fn == 'pi':
+            policy = botorch.acquisition.analytic.ProbabilityOfImprovement(model, best_f=train_y.max())
+        elif acquisition_fn == 'ei':
+            policy = botorch.acquisition.analytic.LogExpectedImprovement(model, best_f=train_y.max())
+        elif acquisition_fn == 'ucb':
+            policy = botorch.acquisition.analytic.UpperConfidenceBound(model, beta=1)
+        else:
+            raise NotImplementedError
+
+        next_x, acq_val = botorch.optim.optimize_acqf(
+            policy,
+            bounds=torch.tensor([[-bound * 1.0], [bound * 1.0]]),
+            q=1,
+            num_restarts=20,
+            raw_samples=50,
+        )
+
+        visualize_gp_belief_and_policy(model, likelihood, policy, next_x=next_x)
+
+        next_y = forrester_1d(next_x)
+
+        train_x = torch.cat([train_x, next_x])
+        train_y = torch.cat([train_y, next_y])
 
 
-```python
-class GPModel(gpytorch.models.ExactGP, botorch.models.gpytorch.GPyTorchModel):
-    num_outputs = 1
-
-    def __init__(self, train_x, train_y, likelihood):
-        super().__init__(train_x, train_y, likelihood)
-        self.mean_module = gpytorch.means.ConstantMean()
-        self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernel())
-
-    def forward(self, x):
-        mean_x = self.mean_module(x)
-        covar_x = self.covar_module(x)
-        return gpytorch.distributions.MultivariateNormal(mean_x, covar_x)
-```
-
-
-```python
 def fit_gp_model(train_x, train_y, num_train_iters=500):
     noise = 1e-4
 
@@ -150,12 +174,26 @@ def fit_gp_model(train_x, train_y, num_train_iters=500):
     likelihood.eval()
 
     return model, likelihood
+
+
+class GPModel(gpytorch.models.ExactGP, botorch.models.gpytorch.GPyTorchModel):
+    num_outputs = 1
+
+    def __init__(self, train_x, train_y, likelihood):
+        super().__init__(train_x, train_y, likelihood)
+        self.mean_module = gpytorch.means.ConstantMean()
+        self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernel())
+
+    def forward(self, x):
+        mean_x = self.mean_module(x)
+        covar_x = self.covar_module(x)
+        return gpytorch.distributions.MultivariateNormal(mean_x, covar_x)
+
 ```
 
 
 ```python
 bound = 5
-
 
 xs = torch.linspace(-bound, bound, bound * 100 + 1).unsqueeze(1)
 ys = forrester_1d(xs)
@@ -185,39 +223,7 @@ model, likelihood = fit_gp_model(train_x, train_y)
 
 
 ```python
-def plot_improvement(acquisition_fn):
-    num_queries = 10
-
-    train_x = torch.tensor([[1.0], [2.0]])
-    train_y = forrester_1d(train_x)
-
-    for i in range(num_queries):
-        print("iteration", i)
-        print("incumbent", train_x[train_y.argmax()], train_y.max())
-
-        model, likelihood = fit_gp_model(train_x, train_y)
-
-        policy = acquisition_fn(model, best_f=train_y.max())
-
-        next_x, acq_val = botorch.optim.optimize_acqf(
-            policy,
-            bounds=torch.tensor([[-bound * 1.0], [bound * 1.0]]),
-            q=1,
-            num_restarts=20,
-            raw_samples=50,
-        )
-
-        visualize_gp_belief_and_policy(model, likelihood, policy, next_x=next_x)
-
-        next_y = forrester_1d(next_x)
-
-        train_x = torch.cat([train_x, next_x])
-        train_y = torch.cat([train_y, next_y])
-```
-
-
-```python
-plot_improvement(botorch.acquisition.analytic.ProbabilityOfImprovement)
+visualize_improvement("pi")
 ```
 
     iteration 0
@@ -236,7 +242,7 @@ plot_improvement(botorch.acquisition.analytic.ProbabilityOfImprovement)
 
 
     
-![png](004_policies_files/004_policies_8_3.png)
+![png](004_policies_files/004_policies_5_3.png)
     
 
 
@@ -250,7 +256,7 @@ plot_improvement(botorch.acquisition.analytic.ProbabilityOfImprovement)
 
 
     
-![png](004_policies_files/004_policies_8_6.png)
+![png](004_policies_files/004_policies_5_6.png)
     
 
 
@@ -264,7 +270,7 @@ plot_improvement(botorch.acquisition.analytic.ProbabilityOfImprovement)
 
 
     
-![png](004_policies_files/004_policies_8_9.png)
+![png](004_policies_files/004_policies_5_9.png)
     
 
 
@@ -278,7 +284,7 @@ plot_improvement(botorch.acquisition.analytic.ProbabilityOfImprovement)
 
 
     
-![png](004_policies_files/004_policies_8_12.png)
+![png](004_policies_files/004_policies_5_12.png)
     
 
 
@@ -292,7 +298,7 @@ plot_improvement(botorch.acquisition.analytic.ProbabilityOfImprovement)
 
 
     
-![png](004_policies_files/004_policies_8_15.png)
+![png](004_policies_files/004_policies_5_15.png)
     
 
 
@@ -306,7 +312,7 @@ plot_improvement(botorch.acquisition.analytic.ProbabilityOfImprovement)
 
 
     
-![png](004_policies_files/004_policies_8_18.png)
+![png](004_policies_files/004_policies_5_18.png)
     
 
 
@@ -320,7 +326,7 @@ plot_improvement(botorch.acquisition.analytic.ProbabilityOfImprovement)
 
 
     
-![png](004_policies_files/004_policies_8_21.png)
+![png](004_policies_files/004_policies_5_21.png)
     
 
 
@@ -334,7 +340,7 @@ plot_improvement(botorch.acquisition.analytic.ProbabilityOfImprovement)
 
 
     
-![png](004_policies_files/004_policies_8_24.png)
+![png](004_policies_files/004_policies_5_24.png)
     
 
 
@@ -348,7 +354,7 @@ plot_improvement(botorch.acquisition.analytic.ProbabilityOfImprovement)
 
 
     
-![png](004_policies_files/004_policies_8_27.png)
+![png](004_policies_files/004_policies_5_27.png)
     
 
 
@@ -362,7 +368,7 @@ plot_improvement(botorch.acquisition.analytic.ProbabilityOfImprovement)
 
 
     
-![png](004_policies_files/004_policies_8_30.png)
+![png](004_policies_files/004_policies_5_30.png)
     
 
 
@@ -370,7 +376,7 @@ plot_improvement(botorch.acquisition.analytic.ProbabilityOfImprovement)
 
 
 ```python
-plot_improvement(botorch.acquisition.analytic.LogExpectedImprovement)
+visualize_improvement("ei")
 ```
 
     iteration 0
@@ -383,7 +389,7 @@ plot_improvement(botorch.acquisition.analytic.LogExpectedImprovement)
 
 
     
-![png](004_policies_files/004_policies_10_2.png)
+![png](004_policies_files/004_policies_7_2.png)
     
 
 
@@ -397,7 +403,7 @@ plot_improvement(botorch.acquisition.analytic.LogExpectedImprovement)
 
 
     
-![png](004_policies_files/004_policies_10_5.png)
+![png](004_policies_files/004_policies_7_5.png)
     
 
 
@@ -411,7 +417,7 @@ plot_improvement(botorch.acquisition.analytic.LogExpectedImprovement)
 
 
     
-![png](004_policies_files/004_policies_10_8.png)
+![png](004_policies_files/004_policies_7_8.png)
     
 
 
@@ -425,7 +431,7 @@ plot_improvement(botorch.acquisition.analytic.LogExpectedImprovement)
 
 
     
-![png](004_policies_files/004_policies_10_11.png)
+![png](004_policies_files/004_policies_7_11.png)
     
 
 
@@ -439,7 +445,7 @@ plot_improvement(botorch.acquisition.analytic.LogExpectedImprovement)
 
 
     
-![png](004_policies_files/004_policies_10_14.png)
+![png](004_policies_files/004_policies_7_14.png)
     
 
 
@@ -453,7 +459,7 @@ plot_improvement(botorch.acquisition.analytic.LogExpectedImprovement)
 
 
     
-![png](004_policies_files/004_policies_10_17.png)
+![png](004_policies_files/004_policies_7_17.png)
     
 
 
@@ -473,7 +479,7 @@ plot_improvement(botorch.acquisition.analytic.LogExpectedImprovement)
 
 
     
-![png](004_policies_files/004_policies_10_21.png)
+![png](004_policies_files/004_policies_7_21.png)
     
 
 
@@ -487,7 +493,7 @@ plot_improvement(botorch.acquisition.analytic.LogExpectedImprovement)
 
 
     
-![png](004_policies_files/004_policies_10_24.png)
+![png](004_policies_files/004_policies_7_24.png)
     
 
 
@@ -501,7 +507,7 @@ plot_improvement(botorch.acquisition.analytic.LogExpectedImprovement)
 
 
     
-![png](004_policies_files/004_policies_10_27.png)
+![png](004_policies_files/004_policies_7_27.png)
     
 
 
@@ -515,6 +521,6 @@ plot_improvement(botorch.acquisition.analytic.LogExpectedImprovement)
 
 
     
-![png](004_policies_files/004_policies_10_30.png)
+![png](004_policies_files/004_policies_7_30.png)
     
 

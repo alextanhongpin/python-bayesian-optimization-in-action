@@ -1,3 +1,17 @@
+```python
+import botorch
+import gpytorch
+import matplotlib.pyplot as plt
+import torch
+from tqdm.notebook import tqdm
+
+plt.style.use("fivethirtyeight")
+plt.rc("figure", figsize=(16, 8))
+```
+
+
+```python
+# %load bo.py
 import matplotlib.pyplot as plt
 import torch
 
@@ -198,3 +212,347 @@ class GPModel(gpytorch.models.ExactGP, botorch.models.gpytorch.GPyTorchModel):
         mean_x = self.mean_module(x)
         covar_x = self.covar_module(x)
         return gpytorch.distributions.MultivariateNormal(mean_x, covar_x)
+```
+
+
+```python
+visualize_improvement("ucb", beta=1)
+```
+
+    iteration 0
+    incumbent tensor([1.]) tensor(1.6054)
+
+
+
+      0%|          | 0/500 [00:00<?, ?it/s]
+
+
+
+    
+![png](005_bandit_files/005_bandit_2_2.png)
+    
+
+
+    iteration 1
+    incumbent tensor([1.]) tensor(1.6054)
+
+
+
+      0%|          | 0/500 [00:00<?, ?it/s]
+
+
+
+    
+![png](005_bandit_files/005_bandit_2_5.png)
+    
+
+
+    iteration 2
+    incumbent tensor([1.3374]) tensor(2.0919)
+
+
+
+      0%|          | 0/500 [00:00<?, ?it/s]
+
+
+
+    
+![png](005_bandit_files/005_bandit_2_8.png)
+    
+
+
+    iteration 3
+    incumbent tensor([1.4682]) tensor(2.1879)
+
+
+
+      0%|          | 0/500 [00:00<?, ?it/s]
+
+
+
+    
+![png](005_bandit_files/005_bandit_2_11.png)
+    
+
+
+    iteration 4
+    incumbent tensor([1.5211]) tensor(2.2027)
+
+
+
+      0%|          | 0/500 [00:00<?, ?it/s]
+
+
+
+    
+![png](005_bandit_files/005_bandit_2_14.png)
+    
+
+
+    iteration 5
+    incumbent tensor([1.5247]) tensor(2.2031)
+
+
+
+      0%|          | 0/500 [00:00<?, ?it/s]
+
+
+
+    
+![png](005_bandit_files/005_bandit_2_17.png)
+    
+
+
+    iteration 6
+    incumbent tensor([1.5247]) tensor(2.2031)
+
+
+
+      0%|          | 0/500 [00:00<?, ?it/s]
+
+
+
+    
+![png](005_bandit_files/005_bandit_2_20.png)
+    
+
+
+    iteration 7
+    incumbent tensor([1.5247]) tensor(2.2031)
+
+
+
+      0%|          | 0/500 [00:00<?, ?it/s]
+
+
+
+    
+![png](005_bandit_files/005_bandit_2_23.png)
+    
+
+
+    iteration 8
+    incumbent tensor([1.5247]) tensor(2.2031)
+
+
+
+      0%|          | 0/500 [00:00<?, ?it/s]
+
+
+
+    
+![png](005_bandit_files/005_bandit_2_26.png)
+    
+
+
+    iteration 9
+    incumbent tensor([1.5247]) tensor(2.2031)
+
+
+
+      0%|          | 0/500 [00:00<?, ?it/s]
+
+
+
+    
+![png](005_bandit_files/005_bandit_2_29.png)
+    
+
+
+
+```python
+visualize_improvement("ucb", beta=2)
+```
+
+    iteration 0
+    incumbent tensor([1.]) tensor(1.6054)
+
+
+
+      0%|          | 0/500 [00:00<?, ?it/s]
+
+
+
+    
+![png](005_bandit_files/005_bandit_3_2.png)
+    
+
+
+    iteration 1
+    incumbent tensor([1.]) tensor(1.6054)
+
+
+
+      0%|          | 0/500 [00:00<?, ?it/s]
+
+
+
+    
+![png](005_bandit_files/005_bandit_3_5.png)
+    
+
+
+    iteration 2
+    incumbent tensor([5.]) tensor(4.8633)
+
+
+
+      0%|          | 0/500 [00:00<?, ?it/s]
+
+
+
+    
+![png](005_bandit_files/005_bandit_3_8.png)
+    
+
+
+    iteration 3
+    incumbent tensor([4.4621]) tensor(6.9516)
+
+
+
+      0%|          | 0/500 [00:00<?, ?it/s]
+
+
+
+    
+![png](005_bandit_files/005_bandit_3_11.png)
+    
+
+
+    iteration 4
+    incumbent tensor([4.4621]) tensor(6.9516)
+
+
+
+      0%|          | 0/500 [00:00<?, ?it/s]
+
+
+
+    
+![png](005_bandit_files/005_bandit_3_14.png)
+    
+
+
+    iteration 5
+    incumbent tensor([4.6016]) tensor(7.1408)
+
+
+
+      0%|          | 0/500 [00:00<?, ?it/s]
+
+
+
+    
+![png](005_bandit_files/005_bandit_3_17.png)
+    
+
+
+    iteration 6
+    incumbent tensor([4.5790]) tensor(7.1431)
+
+
+
+      0%|          | 0/500 [00:00<?, ?it/s]
+
+
+
+    
+![png](005_bandit_files/005_bandit_3_20.png)
+    
+
+
+    iteration 7
+    incumbent tensor([4.5790]) tensor(7.1431)
+
+
+
+      0%|          | 0/500 [00:00<?, ?it/s]
+
+
+
+    
+![png](005_bandit_files/005_bandit_3_23.png)
+    
+
+
+    iteration 8
+    incumbent tensor([4.5790]) tensor(7.1431)
+
+
+
+      0%|          | 0/500 [00:00<?, ?it/s]
+
+
+
+    
+![png](005_bandit_files/005_bandit_3_26.png)
+    
+
+
+    iteration 9
+    incumbent tensor([4.5790]) tensor(7.1431)
+
+
+
+      0%|          | 0/500 [00:00<?, ?it/s]
+
+
+
+    
+![png](005_bandit_files/005_bandit_3_29.png)
+    
+
+
+## Smart Sampling with Thompson policy sampling
+
+
+```python
+xs = torch.linspace(-bound, bound, bound * 100 + 1).unsqueeze(1)
+ys = forrester_1d(xs)
+
+train_x = torch.tensor([[1.0], [2.0]])
+train_y = forrester_1d(train_x)
+
+num_candidates = 1000
+num_queries = 10
+
+torch.manual_seed(1)
+
+for i in range(num_queries):
+    print("iteration", i)
+    print("incumbent", train_x[train_y.argmax()], train_y.max())
+
+    sobol = torch.quasirandom.SobolEngine(1, scramble=True)
+
+    candidate_x = sobol.draw(num_candidates)
+    candidate_x = 10 * candidate_x - 5
+
+    model, likelihood = fit_gp_model(train_x, train_y)
+
+    ts = botorch.generation.MaxPosteriorSampling(model, replacement=False)
+    next_x = ts(candidate_x, num_samples=1)
+
+    visualize_gp_belief_and_policy(
+        model, likelihood, next_x=next_x, xs=xs, ys=ys, train_x=train_x, train_y=train_y
+    )
+
+    next_y = forrester_1d(next_x)
+
+    train_x = torch.cat([train_x, next_x])
+    train_y = torch.cat([train_y, next_y])
+```
+
+
+    ---------------------------------------------------------------------------
+
+    NameError                                 Traceback (most recent call last)
+
+    Cell In[5], line 1
+    ----> 1 xs = torch.linspace(-bound, bound, bound * 100 + 1).unsqueeze(1)
+          2 ys = forrester_1d(xs)
+          4 train_x = torch.tensor([[1.0], [2.0]])
+
+
+    NameError: name 'bound' is not defined
+
