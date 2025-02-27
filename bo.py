@@ -1,12 +1,15 @@
 from tqdm.notebook import tqdm
 import botorch
 import gpytorch
+from matplotlib.figure import figaspect
 import matplotlib.pyplot as plt
 import torch
 
 # Customize plot.
-plt.style.use("fivethirtyeight")
-plt.rc("figure", figsize=(12, 6))
+plt.style.use("bmh")
+# plt.style.use("fivethirtyeight")
+w, h = figaspect(3 / 4)  # 4:3 aspect ratio
+plt.rc("figure", figsize=(w, h))
 
 
 def forrester_1d(x):
@@ -212,6 +215,7 @@ def fit_gp_model(train_x, train_y, num_train_iters=500, GPModel=GPModel):
 
         output = model(train_x)
         loss = -mll(output, train_y)
+        
         loss.backward()
         optimizer.step()
 
