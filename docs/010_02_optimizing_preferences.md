@@ -463,6 +463,12 @@ plt.legend(fontsize=15);
 ```
 
 
+    
+![png](010_02_optimizing_preferences_files/010_02_optimizing_preferences_6_0.png)
+    
+
+
+
 ```python
 
 ```

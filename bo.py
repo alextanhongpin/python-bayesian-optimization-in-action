@@ -4,6 +4,7 @@ import gpytorch
 from matplotlib.figure import figaspect
 import matplotlib.pyplot as plt
 import torch
+from math import pi
 
 # Customize plot.
 plt.style.use("bmh")
@@ -51,7 +52,7 @@ def visualize_gp_belief(
     for i in range(num_samples):
         plt.plot(xs, predictive_distribution.sample(), alpha=0.5, linewidth=2)
 
-    plt.legend(fontsize=15)
+    plt.legend()
 
 
 def visualize_gp_belief_and_policy(
@@ -215,7 +216,7 @@ def fit_gp_model(train_x, train_y, num_train_iters=500, GPModel=GPModel):
 
         output = model(train_x)
         loss = -mll(output, train_y)
-        
+
         loss.backward()
         optimizer.step()
 

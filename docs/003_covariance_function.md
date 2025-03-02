@@ -2,61 +2,13 @@
 
 
 ```python
-from math import pi
-
 import gpytorch
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
 from tqdm.notebook import tqdm
-```
 
-
-```python
-# %load bo
-import matplotlib.pyplot as plt
-import torch
-
-# Customize plot.
-plt.style.use("fivethirtyeight")
-plt.rc("figure", figsize=(16, 8))
-
-
-def visualize_gp_belief(model, likelihood, num_samples=5):
-    with torch.no_grad():
-        predictive_distribution = likelihood(model(xs))
-        predictive_mean = predictive_distribution.mean
-        predictive_upper, predictive_lower = predictive_distribution.confidence_region()
-
-    plt.figure(figsize=(8, 6))
-
-    plt.plot(xs, ys, label="objective", c="r")
-    plt.scatter(train_x, train_y, marker="x", c="k", label="observation")
-
-    plt.plot(xs, predictive_mean, label="mean")
-    plt.fill_between(
-        xs.flatten(), predictive_upper, predictive_lower, alpha=0.3, label="95% CI"
-    )
-
-    torch.manual_seed(0)
-    for i in range(num_samples):
-        plt.plot(xs, predictive_distribution.sample(), alpha=0.5, linewidth=2)
-
-    plt.legend(fontsize=15)
-    plt.show()
-
-
-def forrester_1d(x):
-    # a modification of https://www.sfu.ca/~ssurjano/forretal08.html
-    y = -((x + 1) ** 2) * torch.sin(2 * x + 2) / 5 + 1
-    return y.squeeze(-1)
-
-
-def ackley(x):
-    # a modification of https://www.sfu.ca/~ssurjano/ackley.html
-    return -20 * torch.exp(
-        -0.2 * torch.sqrt((x[:, 0] ** 2 + x[:, 1] ** 2) / 2)
-    ) - torch.exp(torch.cos(2 * pi * x[:, 0] / 3) + torch.cos(2 * pi * x[:, 1]))
+from bo import ackley, forrester_1d, visualize_gp_belief
 ```
 
 
@@ -105,7 +57,9 @@ def f(lengthscale, outputscale):
     model.eval()
     likelihood.eval()
 
-    visualize_gp_belief(model, likelihood)
+    visualize_gp_belief(
+        model, likelihood, xs=xs, ys=ys, train_x=train_x, train_y=train_y
+    )
 ```
 
 
@@ -127,13 +81,12 @@ model.likelihood.noise = noise
 
 model.eval()
 likelihood.eval()
-
-visualize_gp_belief(model, likelihood)
+visualize_gp_belief(model, likelihood, xs=xs, ys=ys, train_x=train_x, train_y=train_y)
 ```
 
 
     
-![png](003_covariance_function_files/003_covariance_function_6_0.png)
+![png](003_covariance_function_files/003_covariance_function_5_0.png)
     
 
 
@@ -199,7 +152,7 @@ plt.tight_layout();
 
 
     
-![png](003_covariance_function_files/003_covariance_function_8_0.png)
+![png](003_covariance_function_files/003_covariance_function_7_0.png)
     
 
 
@@ -214,18 +167,18 @@ plt.tight_layout();
 
 
 
-    (1.37723708152771, 2.079803466796875)
+    (1.37723708152771, 2.079803705215454)
 
 
 
 
 ```python
-visualize_gp_belief(model, likelihood)
+visualize_gp_belief(model, likelihood, xs=xs, ys=ys, train_x=train_x, train_y=train_y)
 ```
 
 
     
-![png](003_covariance_function_files/003_covariance_function_10_0.png)
+![png](003_covariance_function_files/003_covariance_function_9_0.png)
     
 
 
@@ -261,7 +214,9 @@ def update(nu):
     model.eval()
     likelihood.eval()
 
-    visualize_gp_belief(model, likelihood)
+    visualize_gp_belief(
+        model, likelihood, xs=xs, ys=ys, train_x=train_x, train_y=train_y
+    )
 ```
 
 
@@ -283,7 +238,7 @@ plt.colorbar();
 
 
     
-![png](003_covariance_function_files/003_covariance_function_15_0.png)
+![png](003_covariance_function_files/003_covariance_function_14_0.png)
     
 
 
@@ -383,7 +338,7 @@ plt.tight_layout();
 
 
     
-![png](003_covariance_function_files/003_covariance_function_19_0.png)
+![png](003_covariance_function_files/003_covariance_function_18_0.png)
     
 
 
@@ -395,6 +350,6 @@ model.covar_module.base_kernel.lengthscale
 
 
 
-    tensor([[0.7175, 0.4117]], grad_fn=<SoftplusBackward0>)
+    tensor([[0.7176, 0.4117]], grad_fn=<SoftplusBackward0>)
 
 

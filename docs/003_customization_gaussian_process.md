@@ -4,8 +4,7 @@ import matplotlib.pyplot as plt
 import torch
 from tqdm.notebook import tqdm
 
-plt.style.use("fivethirtyeight")
-plt.rcParams["image.cmap"] = "Blues"
+import bo  # for matplotlib styling
 ```
 
 
