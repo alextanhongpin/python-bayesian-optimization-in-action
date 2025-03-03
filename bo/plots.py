@@ -1,39 +1,27 @@
-from tqdm.notebook import tqdm
-import botorch
-import gpytorch
+from .objectives import forrester_1d
+from .train import fit_gp_model
 from matplotlib.figure import figaspect
+import gpytorch
+import botorch
 import matplotlib.pyplot as plt
 import torch
-from math import pi
+
 
 # Customize plot.
-plt.style.use("bmh")
-# plt.style.use("fivethirtyeight")
-w, h = figaspect(3 / 4)  # 4:3 aspect ratio
-plt.rc("figure", figsize=(w, h))
+plt.style.use("bmh")  # "fivefirtyeight" is also a good choice.
 
-
-def forrester_1d(x):
-    # a modification of https://www.sfu.ca/~ssurjano/forretal08.html
-    y = -((x + 1) ** 2) * torch.sin(2 * x + 2) / 5 + 1
-    return y.squeeze(-1)
-
-
-def ackley(x):
-    # a modification of https://www.sfu.ca/~ssurjano/ackley.html
-    return -20 * torch.exp(
-        -0.2 * torch.sqrt((x[:, 0] ** 2 + x[:, 1] ** 2) / 2)
-    ) - torch.exp(torch.cos(2 * pi * x[:, 0] / 3) + torch.cos(2 * pi * x[:, 1]))
+# Set aspect ratio to 4:3
+plt.rc("figure", figsize=figaspect(3 / 4))
 
 
 def visualize_gp_belief(
-    model,
-    likelihood,
+    model: gpytorch.models.ExactGP,
+    likelihood: gpytorch.likelihoods.Likelihood,
+    xs: torch.Tensor,
+    ys: torch.Tensor,
+    train_x: torch.Tensor,
+    train_y: torch.Tensor,
     num_samples=5,
-    xs=None,
-    ys=None,
-    train_x=None,
-    train_y=None,
 ):
     with torch.no_grad():
         predictive_distribution = likelihood(model(xs))
@@ -56,14 +44,14 @@ def visualize_gp_belief(
 
 
 def visualize_gp_belief_and_policy(
-    model,
-    likelihood,
+    model: gpytorch.models.ExactGP,
+    likelihood: gpytorch.likelihoods.Likelihood,
+    xs: torch.Tensor,
+    ys: torch.Tensor,
+    train_x: torch.Tensor,
+    train_y: torch.Tensor,
     policy=None,
     next_x=None,
-    xs=None,
-    ys=None,
-    train_x=None,
-    train_y=None,
 ):
     with torch.no_grad():
         predictive_distribution = likelihood(model(xs))
@@ -115,7 +103,18 @@ def visualize_gp_belief_and_policy(
         return fig
 
 
-def visualize_improvement(acquisition_fn, **kwargs):
+def visualize_improvement(strategy: str, GPModel, **kwargs):
+    """
+    Visualize the improvement of the GP model with the given acquisition function.
+
+    Args:
+        strategy (str): acquisition function name
+        **kwargs: additional arguments for the acquisition function (e.g., beta for UCB)
+    """
+    strategy = strategy.upper()
+    if strategy not in ["POI", "EI", "UCB"]:
+        raise ValueError(f"{strategy} is not supported.")
+
     bound = 5
     num_queries = 10
 
@@ -129,22 +128,25 @@ def visualize_improvement(acquisition_fn, **kwargs):
         # print("iteration", i)
         # print("incumbent", train_x[train_y.argmax()], train_y.max())
 
-        model, likelihood = fit_gp_model(train_x, train_y)
+        likelihood = gpytorch.likelihoods.GaussianLikelihood()
 
-        if acquisition_fn == "poi":
+        model = GPModel(train_x, train_y, likelihood)
+        model.likelihood.noise = 1e-4
+
+        fit_gp_model(model, likelihood, train_x, train_y)
+
+        if strategy == "POI":
             policy = botorch.acquisition.analytic.ProbabilityOfImprovement(
                 model, best_f=train_y.max()
             )
-        elif acquisition_fn == "ei":
+        if strategy == "EI":
             policy = botorch.acquisition.analytic.LogExpectedImprovement(
                 model, best_f=train_y.max()
             )
-        elif acquisition_fn == "ucb":
+        if strategy == "UCB":
             policy = botorch.acquisition.analytic.UpperConfidenceBound(
                 model, **kwargs
             )  # beta=1
-        else:
-            raise NotImplementedError(acquisition_fn)
 
         next_x, acq_val = botorch.optim.optimize_acqf(
             policy,
@@ -157,22 +159,22 @@ def visualize_improvement(acquisition_fn, **kwargs):
         fig = visualize_gp_belief_and_policy(
             model,
             likelihood,
-            policy,
+            xs,
+            ys,
+            train_x,
+            train_y,
+            policy=policy,
             next_x=next_x,
-            xs=xs,
-            ys=ys,
-            train_x=train_x,
-            train_y=train_y,
         )
 
         max_x = train_x[train_y.argmax()].item()
         max_y = train_y.max()
 
         fig.suptitle(
-            f"{acquisition_fn} acquisition function (step={i+1}, x={max_x:.2f}, y={max_y:.2f})",
+            f"{strategy} acquisition function (step={i+1}, x={max_x:.2f}, y={max_y:.2f})",
         )
 
-        plt.savefig(f"tmp/{acquisition_fn}_{i}.png")
+        plt.savefig(f"tmp/{strategy}_{i}.png")
         plt.close(fig)  # Don't display the plot.
 
         next_y = forrester_1d(next_x)
@@ -181,46 +183,3 @@ def visualize_improvement(acquisition_fn, **kwargs):
         train_y = torch.cat([train_y, next_y])
 
     return train_x, train_y
-
-
-class GPModel(gpytorch.models.ExactGP, botorch.models.gpytorch.GPyTorchModel):
-    num_outputs = 1
-
-    def __init__(self, train_x, train_y, likelihood):
-        super().__init__(train_x, train_y, likelihood)
-        self.mean_module = gpytorch.means.ConstantMean()
-        self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernel())
-
-    def forward(self, x):
-        mean_x = self.mean_module(x)
-        covar_x = self.covar_module(x)
-
-        return gpytorch.distributions.MultivariateNormal(mean_x, covar_x)
-
-
-def fit_gp_model(train_x, train_y, num_train_iters=500, GPModel=GPModel):
-    noise = 1e-4
-
-    likelihood = gpytorch.likelihoods.GaussianLikelihood()
-    model = GPModel(train_x, train_y, likelihood)
-    model.likelihood.noise = noise
-
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
-    mll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, model)
-
-    model.train()
-    likelihood.train()
-
-    for i in tqdm(range(num_train_iters)):
-        optimizer.zero_grad()
-
-        output = model(train_x)
-        loss = -mll(output, train_y)
-
-        loss.backward()
-        optimizer.step()
-
-    model.eval()
-    likelihood.eval()
-
-    return model, likelihood

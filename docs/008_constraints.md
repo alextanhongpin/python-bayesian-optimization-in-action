@@ -1,22 +1,21 @@
 ```python
 import warnings
 
-import numpy as np
 import botorch
 import gpytorch
 import matplotlib.pyplot as plt
+import numpy as np
 import torch
 from tqdm.notebook import tqdm
 
-from bo import fit_gp_model
+from bo.objectives import forrester
+from bo.train import fit_gp_model
 ```
 
 
 ```python
 def objective(x):
-    # a modification of https://www.sfu.ca/~ssurjano/forretal08.html
-    y = -((x + 1) ** 2) * torch.sin(2 * x + 2) / 5 + 1 + x / 3
-    return y
+    return forrester(x)
 
 
 def cost(x):
@@ -92,10 +91,15 @@ for trial in range(num_repeats):
         if feasible_flag:
             feasible_incumbents[trial, i] = train_utility[train_cost <= 0].max()
 
-        utility_model, utility_likelihood = fit_gp_model(
-            train_x, train_utility.squeeze(-1), GPModel=GPModel
-        )
-        cost_model, cost_likelihood = fit_gp_model(train_x, train_cost.squeeze(-1))
+        utility_likelihood = gpytorch.likelihoods.GaussianLikelihood()
+        utility_model = GPModel(train_x, train_utility.squeeze(-1), utility_likelihood)
+        utility_model.likelihood.noise = 1e-4
+        fit_gp_model(utility_model, utility_likelihood, train_x, train_utility.squeeze(-1))
+
+        cost_likelihood = gpytorch.likelihoods.GaussianLikelihood()
+        cost_model = GPModel(train_x, train_cost.squeeze(-1), cost_likelihood)
+        cost_model.likelihood.noise = 1e-4
+        fit_gp_model(cost_model, cost_likelihood, train_x, train_cost.squeeze(-1))
 
         if feasible_flag:
             best_f = train_utility[train_cost <= 0].max()
@@ -1068,13 +1072,13 @@ print(ei_incumbents)
 ```
 
     tensor([[ 0.8,  0.8,  0.8,  0.8,  0.8,  0.8,  0.8,  0.8,  0.8,  0.8],
-            [-2.0, -2.0, -2.0, -2.0, -2.0, -2.0, -2.0, -2.0, -2.0, -2.0],
-            [ 2.2,  2.2,  2.7,  2.7,  2.7,  2.7,  2.7,  2.7,  2.7,  2.7],
-            [ 2.5,  2.5,  2.5,  2.5,  2.5,  2.5,  2.5,  2.5,  2.5,  2.5],
-            [-2.0,  0.2,  1.9,  2.3,  2.6,  2.7,  2.7,  2.7,  2.7,  2.7],
-            [-2.0,  0.5,  2.1,  2.4,  2.5,  2.5,  2.5,  2.5,  2.7,  2.7],
-            [-2.0,  1.5,  2.5,  2.5,  2.5,  2.5,  2.5,  2.5,  2.5,  2.5],
-            [-2.0, -2.0, -2.0, -2.0, -2.0, -2.0, -2.0, -2.0, -2.0, -2.0],
-            [ 1.9,  1.9,  2.5,  2.5,  2.5,  2.5,  2.7,  2.7,  2.7,  2.7],
-            [ 2.7,  2.7,  2.7,  2.7,  2.7,  2.7,  2.7,  2.7,  2.7,  2.7]])
+            [-2.0,  2.7,  2.7,  3.3,  4.1,  4.2,  4.2,  4.2,  4.2,  4.2],
+            [ 1.8,  1.8,  2.2,  2.2,  2.2,  2.2,  2.2,  2.2,  2.2,  2.2],
+            [ 4.1,  4.1,  4.1,  4.2,  4.2,  4.2,  4.2,  4.2,  4.2,  4.2],
+            [ 1.0,  1.6,  4.0,  4.2,  4.2,  4.2,  4.2,  4.2,  4.2,  4.2],
+            [-2.0,  1.9,  3.5,  4.1,  4.2,  4.2,  4.2,  4.2,  4.2,  4.2],
+            [ 1.2,  1.2,  1.9,  1.9,  2.2,  2.2,  2.2,  2.2,  2.2,  2.2],
+            [ 0.8,  0.8,  0.8,  0.8,  0.8,  0.8,  0.8,  0.8,  0.8,  0.8],
+            [ 1.6,  1.6,  2.1,  2.1,  2.1,  2.1,  2.2,  2.2,  4.2,  4.2],
+            [ 2.2,  2.2,  2.2,  2.2,  2.2,  2.2,  2.2,  2.2,  2.2,  2.2]])
 

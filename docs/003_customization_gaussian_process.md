@@ -2,9 +2,16 @@
 import gpytorch
 import matplotlib.pyplot as plt
 import torch
+from matplotlib.figure import figaspect
 from tqdm.notebook import tqdm
 
-import bo  # for matplotlib styling
+from bo.models import ConstantMeanGPModel
+
+# Customize plot.
+plt.style.use("bmh")  # "fivefirtyeight" is also a good choice.
+
+# Set aspect ratio to 4:3
+plt.rc("figure", figsize=figaspect(3 / 4))
 ```
 
 
@@ -35,20 +42,6 @@ def visualize_gp_belief(model, likelihood):
 
 
 ```python
-class ConstantMeanGPModel(gpytorch.models.ExactGP):
-    def __init__(self, train_x, train_y, likelihood):
-        super().__init__(train_x, train_y, likelihood)
-        self.mean_module = gpytorch.means.ConstantMean()
-        self.covar_module = gpytorch.kernels.RBFKernel()
-
-    def forward(self, x):
-        mean_x = self.mean_module(x)
-        covar_x = self.covar_module(x)
-        return gpytorch.distributions.MultivariateNormal(mean_x, covar_x)
-```
-
-
-```python
 likelihood = gpytorch.likelihoods.GaussianLikelihood()
 model = ConstantMeanGPModel(train_x, train_y, likelihood)
 model.covar_module.lengthscale = 1
@@ -61,7 +54,7 @@ visualize_gp_belief(model, likelihood)
 
 
     
-![png](003_customization_gaussian_process_files/003_customization_gaussian_process_5_0.png)
+![png](003_customization_gaussian_process_files/003_customization_gaussian_process_4_0.png)
     
 
 
@@ -130,7 +123,7 @@ plt.show()
 
 
     
-![png](003_customization_gaussian_process_files/003_customization_gaussian_process_7_0.png)
+![png](003_customization_gaussian_process_files/003_customization_gaussian_process_6_0.png)
     
 
 
@@ -193,7 +186,7 @@ ax[1].set_ylabel("constant");
 
 
     
-![png](003_customization_gaussian_process_files/003_customization_gaussian_process_9_0.png)
+![png](003_customization_gaussian_process_files/003_customization_gaussian_process_8_0.png)
     
 
 
@@ -204,7 +197,7 @@ visualize_gp_belief(model, likelihood)
 
 
     
-![png](003_customization_gaussian_process_files/003_customization_gaussian_process_10_0.png)
+![png](003_customization_gaussian_process_files/003_customization_gaussian_process_9_0.png)
     
 
 
@@ -295,7 +288,7 @@ plt.tight_layout();
 
 
     
-![png](003_customization_gaussian_process_files/003_customization_gaussian_process_15_0.png)
+![png](003_customization_gaussian_process_files/003_customization_gaussian_process_14_0.png)
     
 
 
@@ -306,6 +299,6 @@ visualize_gp_belief(model, likelihood)
 
 
     
-![png](003_customization_gaussian_process_files/003_customization_gaussian_process_16_0.png)
+![png](003_customization_gaussian_process_files/003_customization_gaussian_process_15_0.png)
     
 

@@ -8,21 +8,9 @@ import numpy as np
 import torch
 from tqdm.notebook import tqdm
 
-from bo import ackley, forrester_1d, visualize_gp_belief
-```
-
-
-```python
-class ScaleGPModel(gpytorch.models.ExactGP):
-    def __init__(self, train_x, train_y, likelihood):
-        super().__init__(train_x, train_y, likelihood)
-        self.mean_module = gpytorch.means.ZeroMean()
-        self.covar_module = gpytorch.kernels.ScaleKernel(gpytorch.kernels.RBFKernel())
-
-    def forward(self, x):
-        mean_x = self.mean_module(x)
-        covar_x = self.covar_module(x)
-        return gpytorch.distributions.MultivariateNormal(mean_x, covar_x)
+from bo.models import MaternGPModel, ScaleGPModel
+from bo.objectives import ackley, forrester_1d
+from bo.plots import visualize_gp_belief
 ```
 
 
@@ -57,9 +45,7 @@ def f(lengthscale, outputscale):
     model.eval()
     likelihood.eval()
 
-    visualize_gp_belief(
-        model, likelihood, xs=xs, ys=ys, train_x=train_x, train_y=train_y
-    )
+    visualize_gp_belief(model, likelihood, xs, ys, train_x, train_y)
 ```
 
 
@@ -81,12 +67,12 @@ model.likelihood.noise = noise
 
 model.eval()
 likelihood.eval()
-visualize_gp_belief(model, likelihood, xs=xs, ys=ys, train_x=train_x, train_y=train_y)
+visualize_gp_belief(model, likelihood, xs, ys, train_x, train_y)
 ```
 
 
     
-![png](003_covariance_function_files/003_covariance_function_5_0.png)
+![png](003_covariance_function_files/003_covariance_function_4_0.png)
     
 
 
@@ -152,7 +138,7 @@ plt.tight_layout();
 
 
     
-![png](003_covariance_function_files/003_covariance_function_7_0.png)
+![png](003_covariance_function_files/003_covariance_function_6_0.png)
     
 
 
@@ -173,12 +159,12 @@ plt.tight_layout();
 
 
 ```python
-visualize_gp_belief(model, likelihood, xs=xs, ys=ys, train_x=train_x, train_y=train_y)
+visualize_gp_belief(model, likelihood, xs, ys, train_x, train_y)
 ```
 
 
     
-![png](003_covariance_function_files/003_covariance_function_9_0.png)
+![png](003_covariance_function_files/003_covariance_function_8_0.png)
     
 
 
@@ -186,20 +172,8 @@ visualize_gp_belief(model, likelihood, xs=xs, ys=ys, train_x=train_x, train_y=tr
 
 
 ```python
-class MaternGPModel(gpytorch.models.ExactGP):
-    def __init__(self, train_x, train_y, likelihood, nu):
-        super().__init__(train_x, train_y, likelihood)
-        self.mean_module = gpytorch.means.ZeroMean()
-        self.covar_module = gpytorch.kernels.MaternKernel(nu)
+from ipywidgets import interact
 
-    def forward(self, x):
-        mean_x = self.mean_module(x)
-        covar_x = self.covar_module(x)
-        return gpytorch.distributions.MultivariateNormal(mean_x, covar_x)
-```
-
-
-```python
 lengthscale = 1
 noise = 1e-4
 
@@ -238,7 +212,7 @@ plt.colorbar();
 
 
     
-![png](003_covariance_function_files/003_covariance_function_14_0.png)
+![png](003_covariance_function_files/003_covariance_function_12_0.png)
     
 
 
@@ -338,7 +312,7 @@ plt.tight_layout();
 
 
     
-![png](003_covariance_function_files/003_covariance_function_18_0.png)
+![png](003_covariance_function_files/003_covariance_function_16_0.png)
     
 
 

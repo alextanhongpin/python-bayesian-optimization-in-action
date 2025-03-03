@@ -1,9 +1,13 @@
 ```python
 import botorch
+import gpytorch
 import matplotlib.pyplot as plt
 import torch
 
-from bo import fit_gp_model, forrester_1d, visualize_gp_belief_and_policy
+from bo.models import BotorchGPModel
+from bo.objectives import forrester_1d
+from bo.plots import visualize_gp_belief_and_policy
+from bo.train import fit_gp_model
 ```
 
 
@@ -43,7 +47,13 @@ for i in range(num_queries):
     sobol = torch.quasirandom.SobolEngine(1, scramble=True)
     candidate_x = sobol.draw(num_candidates)
     candidate_x = 10 * candidate_x - 5
-    model, likelihood = fit_gp_model(train_x, train_y)
+
+    noise = 1e-4
+
+    likelihood = gpytorch.likelihoods.GaussianLikelihood()
+    model = BotorchGPModel(train_x, train_y, likelihood)
+    model.likelihood.noise = noise
+    fit_gp_model(model, likelihood, train_x, train_y)
 
     policy = botorch.acquisition.max_value_entropy_search.qMaxValueEntropy(
         model, candidate_x
@@ -60,12 +70,12 @@ for i in range(num_queries):
     visualize_gp_belief_and_policy(
         model,
         likelihood,
-        policy,
+        xs,
+        ys,
+        train_x,
+        train_y,
+        policy=policy,
         next_x=next_x,
-        xs=xs,
-        ys=ys,
-        train_x=train_x,
-        train_y=train_y,
     )
     plt.show()
 

@@ -31,4 +31,5 @@ convert:
 
 lint:
 	@poetry run black *.py
+	@poetry run black bo/*.py
 
