@@ -1,4 +1,5 @@
 from .objectives import forrester_1d
+from .models import BotorchGPModel
 from .train import fit_gp_model
 from matplotlib.figure import figaspect
 import gpytorch
@@ -103,7 +104,7 @@ def visualize_gp_belief_and_policy(
         return fig
 
 
-def visualize_improvement(strategy: str, GPModel, **kwargs):
+def visualize_improvement(strategy: str, **kwargs):
     """
     Visualize the improvement of the GP model with the given acquisition function.
 
@@ -130,7 +131,7 @@ def visualize_improvement(strategy: str, GPModel, **kwargs):
 
         likelihood = gpytorch.likelihoods.GaussianLikelihood()
 
-        model = GPModel(train_x, train_y, likelihood)
+        model = BotorchGPModel(train_x, train_y, likelihood)
         model.likelihood.noise = 1e-4
 
         fit_gp_model(model, likelihood, train_x, train_y)
