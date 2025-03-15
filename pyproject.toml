@@ -19,6 +19,8 @@ numpy = "^2.2.3"
 gpytorch = "^1.14"
 tqdm = "^4.67.1"
 botorch = "^0.13.0"
+torchvision = "^0.21.0"
+seaborn = "^0.13.2"
 
 
 [build-system]

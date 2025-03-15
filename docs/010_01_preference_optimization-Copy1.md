@@ -1,3 +1,6 @@
+# 
+
+
 ```python
 import warnings
 
@@ -14,6 +17,10 @@ from tqdm.notebook import tqdm
 plt.style.use("bmh")
 plt.rc("figure", figsize=figaspect(3 / 4))
 ```
+
+- define an objective function
+- determine the lower and upper bound of the objective function
+- plot the ground truth
 
 
 ```python
@@ -33,14 +40,13 @@ ys = objective(xs)
 
 plt.plot(xs, ys, label="user's preference", c="r")
 plt.legend(fontsize=15)
-# plt.axis("off")
 
 plt.show()
 ```
 
 
     
-![png](010_01_preference_optimization-Copy1_files/010_01_preference_optimization-Copy1_1_0.png)
+![png](010_01_preference_optimization-Copy1_files/010_01_preference_optimization-Copy1_3_0.png)
     
 
 
@@ -53,54 +59,12 @@ def compare(y):
         return torch.tensor([[0, 1]]).long()
     else:
         return torch.tensor([[1, 0]]).long()
-
-
-def observe_and_append_data(x_next, f, x_train, comp_train, tol=1e-3):
-    """
-    x_next should be an experiment, i.e., a pair of locations
-    """
-    x_next = x_next.to(x_train)
-    y_next = f(x_next)
-    comp_next = compare(y_next)
-
-    n = x_train.shape[-2]
-    new_x_train = x_train.clone()
-    new_comp_next = comp_next.clone() + n
-    n_dups = 0
-
-    ### first element
-    dup_ind = torch.where(
-        torch.all(torch.isclose(x_train, x_next[0], atol=tol), axis=1)
-    )[0]
-    if dup_ind.nelement() == 0:
-        new_x_train = torch.cat([x_train, x_next[0].unsqueeze(-2)])
-    else:
-        # replace n with the duplicated index
-        # decrement the other index
-        new_comp_next = torch.where(new_comp_next == n, dup_ind, new_comp_next - 1)
-
-        n_dups += 1
-
-    ### second element
-    dup_ind = torch.where(
-        torch.all(torch.isclose(new_x_train, x_next[1], atol=tol), axis=1)
-    )[0]
-    if dup_ind.nelement() == 0:
-        new_x_train = torch.cat([new_x_train, x_next[1].unsqueeze(-2)])
-    else:
-        # replace n + 1 with the duplicated index
-        new_comp_next = torch.where(
-            new_comp_next == n + 1 - n_dups, dup_ind, new_comp_next
-        )
-
-    new_comp_train = torch.cat([comp_train, new_comp_next])
-
-    return new_x_train, new_comp_train
 ```
 
 
 ```python
 torch.manual_seed(0)
+
 train_x = bounds[0] + (bounds[1] - bounds[0]) * torch.rand(2, 1)
 train_x
 ```
@@ -117,13 +81,16 @@ train_x
 ```python
 train_y = objective(train_x)
 train_comp = compare(train_y)
-train_comp
+
+train_y, train_comp
 ```
 
 
 
 
-    tensor([[0, 1]])
+    (tensor([[ 0.8137],
+             [-0.4992]]),
+     tensor([[0, 1]]))
 
 
 
@@ -175,6 +142,6 @@ plt.legend();
 
 
     
-![png](010_01_preference_optimization-Copy1_files/010_01_preference_optimization-Copy1_8_0.png)
+![png](010_01_preference_optimization-Copy1_files/010_01_preference_optimization-Copy1_10_0.png)
     
 
